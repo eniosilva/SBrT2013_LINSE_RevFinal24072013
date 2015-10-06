@@ -1,0 +1,401 @@
+\documentclass{sbrt2013port}
+\usepackage[latin1]{inputenc}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{amsmath}
+\usepackage{subfigure}
+%\usepackage{setspace,relsize,needspace,etoolbox}
+%\usepackage{subfig}
+
+%% Declaração de Operadores Matemáticos
+\DeclareMathOperator{\NB}{NB}
+\DeclareMathOperator{\WB}{WB}
+\DeclareMathOperator{\UP}{UP}
+\DeclareMathOperator{\LSF}{LSF}
+\DeclareMathOperator{\CB}{CB}
+\DeclareMathOperator{\exci}{exc}
+\DeclareMathOperator{\vo}{v}
+\DeclareMathOperator{\nv}{nv}
+\DeclareMathOperator{\transp}{^T}
+
+\hyphenpenalty 100000
+\hyphenation{adequado}
+\hyphenation{abordagens}
+
+%\setlength{\voffset}{-1cm}
+%\setlength{\headsep}{5pt}
+\usepackage{geometry}
+%\geometry{verbose,a4paper,tmargin=19mm,bmargin=19mm,lmargin=12.5mm,rmargin=12.5mm}
+\geometry{verbose,a4paper,tmargin=19mm,bmargin=19mm,lmargin=12.3mm,rmargin=12.3mm}
+%\geometry{verbose,a4paper,tmargin=18mm,bmargin=19mm,lmargin=12.3mm,rmargin=12.3mm}
+
+%\captionsetup{belowskip=2pt,aboveskip=2pt}
+%\captionsetup[table]{aboveskip=1pt}
+%\captionsetup[table]{belowskip=4pt}
+
+\begin{document}
+%\title{Extensão Artificial de Largura de Banda para Sinais de Fala em Telefonia Usando Clusterização com Classificação Fonética}
+\title{Extensão Artificial de Largura de Banda para Sinais de Fala Usando Classificação Fonética}
+
+\author{Ênio dos Santos Silva e Rui Seara
+% \thanks{Ênio dos Santos Silva e Rui Seara,
+% Programa de Pós-Graduação em Engenharia Elétrica, Universidade
+% Federal de Santa Catarina, Florianópolis-SC, Brasil, E-mails: enio@linse.ufsc.br,
+% seara@linse.ufsc.br. Este trabalho foi parcialmente financiado pelo Conselho Nacional de Desenvolvimento Científico e Tecnológico (CNPq).} }
+\thanks{Ênio dos Santos e Rui Seara, LINSE -- Laboratório de Circuitos e Processamento de Sinais, Departamento de Engenharia Elétrica,
+ Universidade Federal de Santa Catarina (UFSC), Florianópolis, SC, Brasil, e-mails: enio@linse.ufsc.br; seara@linse.ufsc.br.
+Este trabalho foi parcialmente financiado pelo Conselho Nacional de Desenvolvimento Científico e Tecnológico (CNPq).}}
+
+\maketitle
+
+\markboth{XXXI SIMP\'{O}SIO BRASILEIRO DE TELECOMUNICA\c{C}\~{O}ES - SBrT2013, 1-4 DE SETEMBRO DE 2013, FORTALEZA, CE} {XXXI SIMP\'{O}SIO BRASILEIRO DE TELECOMUNICA\c{C}\~{O}ES - SBrT2013, 1-4 DE SETEMBRO DE 2013, FORTALEZA, CE}
+
+\begin{resumo}
+Este artigo apresenta uma nova estratégia para implementar sistemas de extensão artificial de largura de banda (\textit{artificial band width extension} - ABWE) para sinais de fala aplicados à telefonia em redes de pacotes. Na literatura, diversas abordagens são propostas, entretanto, ainda não há um procedimento adequado que consiga representar satisfatoriamente segmentos de fala com energia concentrada em altas frequências. Visando melhorar o desempenho desses sistemas, uma nova estratégia baseada em classificação fonética é aqui discutida. Os resultados obtidos são avaliados e o realce na qualidade dos sinais de fala reconstruídos confirmam a eficácia da estratégia proposta.
+\end{resumo}
+
+\begin{chave}
+ Classificação fonética, codificação de fala, extensão artificial de largura de banda, realce de voz.
+\end{chave}
+
+\begin{abstract}
+This paper presents a new strategy for implementing artificial band width extension (ABWE) systems of speech signals applied to telephony over packet networks. In the open literature, several approaches are presented for theses systems, however, there is still no procedure that can satisfactorily represent speech segments with concentrated energy at high frequencies. Aiming to improve the performance of these systems, a new strategy based on phonetic classification is discussed here. The obtained results show an enhancement in the quality of reconstructed speech signals, confirming the effectiveness of the proposed strategy.
+\end{abstract}
+
+\begin{keywords}
+Phonetic classification, speech coder, artificial band width extension, speech enhancement.
+\end{keywords}
+
+% \begin{figure*}[!h]
+%   \centering
+%   \includegraphics[width=\linewidth]{figuras/desenho3.eps}
+%   \caption{Figura de uma coluna num documento de v\'arias colunas.}
+% \end{figure*}
+
+\section{Introdução}
+\begin{figure*}
+  \centering
+  %\includegraphics{figuras/Fig_1.eps}
+   \includegraphics[scale=0.95]{figuras/Fig_1.eps}
+%   \includegraphics[scale=1]{figuras/Fig_1.eps}
+  \centering
+  \caption{\label{FigSistemaABWE}Diagrama de blocos do sistema ABWE.}
+\end{figure*}
+A extensão artificial de largura de banda (\textit{artificial band width extension} - ABWE) é uma técnica que sintetiza componentes de alta frequência em um sinal de fala digital. Nos últimos anos, essa técnica ganhou evidência por estar contida em um dos mais difundidos \textit{codecs} de telefonia: o \textit{codec} G.729 \cite{G.729}, em sua Recomendação ITU-T G.729.1 \cite{G729.1}. A necessidade de extensão de largura de banda surgiu devido à baixa qualidade do sinal de fala na rede de telefonia pública (\textit{public switched telephone network} - PSTN) que, historicamente, por razões econômicas e para evitar interferências entre canais (\textit{cross-talk}), adotou, como padrão para transmissão, sinais de banda estreita (\textit{narrowband} - NB) \cite{BookBernd}. Nesse cenário, os sinais são amostrados a 8000 Hz e contêm componentes de frequências limitados entre 300 e 3400 Hz. Tal limitação de largura de banda provoca perda de qualidade nos sinais de fala, tornando-os ``abafados",$\;$``sem brilho"$\;
+$e com degradação de naturalidade e inteligibilidade \cite{Jax2006}.
+
+%Estudos realizados pela união internacional de telecomunicações (\textit{international telecommunication union }- ITU) com usuários de PSTN mostraram que a largura de banda do sinal de fala afeta significativamente a qualidade perceptiva do sinal bem como a sua inteligibilidade. Dessa forma, sinais de fala de banda larga (\textit{wideband} - WB) são preferidos pelos usuários por utilizarem uma largura de banda mais abrangente, com frequências de 50 a 7000 Hz, apresentando maior riqueza espectral quando comparado aos sinais de NB \cite{ITUStudy93}.
+
+Em \cite{G729.1}, \cite{Patel2012} e \cite{Bernd2007}, a utilização de codificadores de banda larga (\textit{wideband} - WB) vem sendo discutida e adotada em alguns sistemas de comunicações. Em um futuro próximo, é inevitável a extinção das PSTNs, como já vem ocorrendo por meio da adoção de sistemas VoIPs (voz sobre IP) para chamadas de longa distância (DDD/DDI) \cite{BookBernd}; no entanto, a PSTN ainda é uma das redes mais difundidas em todo o mundo e sua modernização para WB demandaria um enorme esforço, o qual seria, em curto prazo, economicamente inviável \cite{BookBernd}. Portanto, durante os próximos anos, preveem-se apenas migrações graduais para terminais de WB e, por um certo período de transição, redes de telefonia mistas NB e WB irão coexistir \cite{Jax2006}. Assim, para contornar as limitações da comunicação em NB, a extensão artificial de largura de banda pode ser vista como uma alternativa interessante. Nesse contexto, os componentes de frequência não transmitidos pelos codificadores NB devem
+ser sintetizados artificialmente através da estimação de parâmetros do modelo fonte-filtro de produção do sinal da fala, no qual são consideradas duas etapas: de estimação do sinal de excitação e de estimação do envelope do trato vocal \cite{G.729}, \cite{BookBernd}, \cite{Jax2006}. Essa técnica proporciona melhorias na qualidade do sinal de fala, tornando-o mais próximo de um sinal WB, requerendo apenas alterações nos terminais receptores (\textit{far-end}), fazendo o sistema compatível com a maior parte das redes de telefonia existentes \cite{BookBernd}.
+
+Nos últimos anos, diversos sistemas usando diferentes estratégias vêm sendo propostos para a realização de ABWE \cite{Bernd2007}. Em \cite{G729.1}, \cite{Patel2012} e \cite{Ghaderi2011}, a ABWE é obtida através da transmissão de informações extras ao \textit{far-end} (\textit{side information}). Entretanto, a implementação de tais estratégias resulta em aumento na taxa de bits do sinal, bem como alterações nos terminais transmissores (\textit{near-end}) e receptores (\textit{far-end}) da rede de comunicação. Para contornar tais problemas, \cite{unno05} e \cite{Mohan2011} sugerem estratégias que não necessitam de \textit{side information}. No entanto, tais estratégias levam a um alto índice de ocorrência de ruídos musicais e impulsivos devido à falta de um tratamento adequado na escolha e clusterização de parâmetros discriminativos do trato vocal.
+
+Apesar da crescente evolução dos sistemas de ABWE, ainda não se dispõe de qualquer procedimento consolidado apresentando desempenho satisfatório na estimação de WB, principalmente nos casos em que o sinal de fala contém energias concentradas em altas frequências, i.e., maiores do que 5000 Hz. Nesses casos, nota-se geralmente artefatos indesejados no sinal de fala reconstituído \cite{Pulakka2007}, \cite{Selvi2011}, \cite{Kornagel2005} e \cite{Can2011}.
+
+Neste trabalho, visando compatibilidade com \textit{codecs} NB e WB, que são amplamente adotados no mercado de telefonia, tal como Recomendação ITU-T G.729 \cite{G.729} e G.729.1 \cite{G729.1}, a estratégia aqui desenvolvida para ABWE é baseada nos procedimentos descritos em \cite{Bernd2007}. Para propiciar independência de \textit{side information}, bem como redução de ocorrências e atenuação dos efeitos indesejáveis no sinal de fala reconstruído, são propostas alterações nas etapas de representação e estimação do trato vocal do sistema proposto em \cite{G729.1}, para o qual sugerimos acrescentar uma etapa de classificação fonética. Essa etapa é responsável por um tratamento específico em diferentes classes de sinais de fala, garantindo, dessa forma, uma melhor representação e, consequentemente, uma melhoria na clusterização dos parâmetros discriminativos do trato vocal, resultando em uma síntese mais ``limpa'' e agradável dos sinais WBs.
+
+%A eficácia da estratégia proposta é verificada através de avaliações subjetivas e objetivas, através de espectrogramas, resultados de medidas de distâncias e avaliações perceptuais da qualidade do sinal de fala \cite{BookLoizou}, \cite{Loizou2008}, \cite{P.862.2}.
+
+%Este artigo está organizado como segue. Na Seção II, é apresentada uma visão geral do sistema ABWE usado como base em nosso trabalho. Na Seção III, é discutido o primeiro dos três estágios de processamento do sistema ABWE considerado. As Seções IV e V descrevem os demais estágios, bem como os detalhes da contribuição deste artigo. Finalmente, as Seções VI e VII apresentam, respectivamente, os resultados obtidos, e as conclusões e comentários finais deste trabalho de pesquisa.
+
+\section{Algoritmo de ABWE}\label{abwe}
+A idéia básica de um sistema de ABWE é recriar artificialmente componentes de alta frequência, convertendo um sinal NB em um sinal WB, isto é, restaurando as propriedades acústicas pertinentes à WB. Essa técnica, que aparentemente conflita o critério de Nyquist, assume que ambos sinais, NB e WB, sejam gerados pelo mesmo modelo fonte-filtro de produção da fala \cite{Jax2006}.
+
+Sendo o sinal de fala quase-estacionário a cada segmento de curta duração (aproximadamente $20$ ms) \cite{BookLoizou}, parâmetros WB do modelo fonte-filtro, tais como o sinal de excitação e o envelope do trato vocal, são estimados através de informações implícitas contidas no sinal NB \cite{BookBernd}. Dessa forma, modelos matemáticos do processo de produção do sinal de fala podem ser obtidos em intervalos de tempo periódicos e, assim, torna-se possível estimar os componentes de alta frequência não presentes no sinal transmitido através da PSTN.
+
+A solução ideal, representada por (\ref{SolucaoIdealABWE}), para um sistema de ABWE, é a obtenção de uma função $f$, tal que $f$ determine os parâmetros de banda alta UP, $y \in S_{\UP}$, a partir de parâmetros NB, $x \in S_{\NB}$, onde $S_{\UP}$ e $S_{\NB}$ representam, respectivamente, os espaços de dados dos parâmetros UP e NB. Dessa forma, com a combinação de ambos espaços, $S_{\UP}$ e $S_{\NB}$, é possível uma estimação dos parâmetros de banda larga $S_{\WB} \supset (S_{\NB} \cup S_{\UP})$. Assim,
+\begin{equation}\label{SolucaoIdealABWE}
+\begin{array}{rrl}
+       f : S_{\NB}&\rightarrow& S_{\UP} \\
+                x&\mapsto& y = f(x)
+\end{array}
+\end{equation}
+Neste artigo, adota-se como função $f$, para estimação do espaço de dados $S_{\UP}$, uma função $f_{\CB}$ de mapeamento por \textit{codebook} \cite{yoshida94}.
+
+\subsection{Proposta de Nova Estratégia para Extensão de Banda}
+O procedimento de ABWE adotado aqui é baseado no processo de codificação e decodificação de sinais WB propostos em \cite{G729.1}. Entretanto, a estratégia implementada em \cite{G729.1} lança mão de \textit{side information}, tais como fase e energia dos segmentos do sinal de fala para estimar os sinais de excitação e os envelopes temporais e espectrais correspondentes à banda alta do sinal. Para tornar a codificação independente de \textit{side information} e para melhorar o desempenho do decodificador em cenários de transmissões NB, este trabalho propõe uma nova estratégia de processamento, incluindo uma etapa de classificação fonética e adotando coeficientes LSF (\textit{line spectrum frequency}) \cite{yoshida94}, ao invés de coeficientes de fase e energia, para a representação do envelope espectral.
+
+A Fig.~\ref{FigSistemaABWE} ilustra o diagrama de blocos do sistema de ABWE modificado. Assim como em sua versão original~\cite{G729.1}, esse diagrama tem como base uma estrutura de três estágios de processamento, descritos como segue:
+\begin{enumerate}
+ \item Estágio I. Estimação do sinal de excitação através de predição linear (\textit{code-excited linear prediction} - CELP)~\cite{G.729}.
+ \item Estágio II. Filtragem do sinal de excitação resultante do primeiro estágio através dos envelopes temporal e espectral do trato-vocal estimados a partir de uma consulta a um conjunto de \textit{codebooks} baseados em classificação fonética.
+ \item Estágio III. Cálculo de ganho e pós-processamento para a estimação do sinal WB.
+\end{enumerate}
+%\begin{figure}[h]
+%%\begin{minipage}{0.5\linewidth}
+%\center
+%\includegraphics[keepaspectratio,width=10cm]{figuras/desenho3.eps}
+%\caption{\label{FigSistemaABWE}Diagrama de blocos do sistema ABWE.}
+%%\end{minipage}
+%\end{figure}
+% \begin{figure*}[!h]
+%   \centering
+%   \includegraphics[width=\linewidth]{figuras/desenho3.eps}
+%   \caption{\label{FigSistemaABWE}Diagrama de blocos do sistema ABWE.}
+% \end{figure*}
+%\begin{figure*}
+%\centerline{\subfigure[Case I]{\includegraphics[width=2.5in]{figuras/Fig_1.eps}
+%\label{fig_first_case}}
+%\hfil
+%\subfigure[Case II]{\includegraphics[width=2.5in]{figuras/Fig_1.eps}
+%\label{fig_second_case}}}
+%\caption{Simulation results}
+%\label{fig_sim}
+%\end{figure*}
+%\begin{figure*}
+%\centerline{\subfigure[Diagrama de blocos do sistema ABWE.]{\includegraphics{figuras/Fig_1.eps}}}
+%\caption{\label{FigSistemaABWE}Diagrama de blocos do sistema ABWE.}
+%\end{figure*}
+%\begin{figure*}
+%\includegraphics{figuras/Fig_1.eps}
+%\caption{\label{FigSistemaABWE}Diagrama de blocos do sistema ABWE.}}
+%\end{figure*}
+%\begin{figure*}
+%  \centering
+%  %\includegraphics{figuras/Fig_1.eps}
+%   %\includegraphics[width=14 cm]{figuras/Fig_1.eps}
+%   \includegraphics[scale=0.98]{figuras/Fig_1.eps}
+%  \centering
+%  \caption{\label{FigSistemaABWE}Diagrama de blocos do sistema ABWE.}
+%\end{figure*}
+
+Os estágios que compõem o sistema ABWE serão descritos com detalhes nas seções seguintes.
+\section{Estágio I - Estimação do Sinal de Excitação}
+A cada quadro (de aproximadamente $20$ ms) do sinal de fala NB $s_{\NB}(n)$, recebido como entrada no sistema de ABWE da Fig.~\ref{FigSistemaABWE},  são estimados sinais de excitação de banda alta $\hat{s}_{\UP}^{\exci}(n)$. A estimação de $\hat{s}_{\UP}^{\exci}(n)$ é obtida através de um modelo ideal de produção de fala quase-estacionário, no qual devem ser satisfeitos os seguintes critérios \cite{Bernd2007}:
+\begin{itemize}
+  \item O sinal de excitação deve apresentar espectro plano.
+  \item Para sinais de fala vozeados, a excitação deve conter harmônicos da frequência fundamental do sinal, $F_0$.
+  \item Para sinais de fala não-vozeados, a excitação deve ser um ruído branco.
+  \item Sinais de fala mistos (vozeados e não-vozeados) devem apresentar uma razão sinal-ruído (SNR) variável.
+  \item A contribuição de parâmetros vozeados não deve ser dominante na banda de alta frequência.
+\end{itemize}
+
+Em \cite{G.729} e \cite{G729.1}, os critérios descritos anteriormente são satisfeitos e a mesma estratégia de estimação do sinal de excitação é também aqui adotada. A Fig.~\ref{FigGeracaoExcitacao} ilustra o diagrama de blocos do processo de estimação do sinal de excitação, no qual parâmetros de energia, ganho e \textit{pitch} são obtidos através de procedimentos utilizados no CELP e aplicados para estimar o sinal de excitação $\hat{s}^{\exci}_{\UP}(n)$, cuja composição é uma mistura de sinais não-vozeado $\hat{s}_{\UP}^{\exci,\nv}(n)$, gerados a partir de um ruído branco, com sinais vozeados $\hat{s}_{\UP}^{\exci,\vo}(n)$, gerados a partir de um trem de pulsos periódicos com frequência fundamental $F_0$ \cite{G729.1}.
+
+\begin{figure}[h]
+%\center
+\centering
+%\includegraphics[keepaspectratio,width=8cm]{figuras/Fig_2.eps}
+%\includegraphics{figuras/Fig_2.eps}
+%\includegraphics[scale=0.95]{figuras/Fig_2.eps}
+\includegraphics[scale=0.9]{figuras/Fig_2.eps}
+\caption{\label{FigGeracaoExcitacao}Diagrama de blocos para geração do sinal de excitação.}
+\end{figure}
+
+\section{Estágio II - Geração de Envelopes Temporais e Espectrais}
+\label{estagio2}
+Neste estágio do sistema de ABWE, são estimados os envelopes temporais e espectrais de banda alta que caracterizam o trato vocal no processo de geração da fala. Esses envelopes são representados pelos seguintes vetores de parâmetros
+\begin{equation}\label{eqParametros}
+       \mathbf{t}_{n} = [t_n(1),\ldots,t_n(16)]\transp \\
+\end{equation}
+e
+\begin{equation}
+       \mathbf{f}_{\LSF,n} = [f_{\LSF,n}(1),\ldots,f_{\LSF,n}(19)]\transp
+\end{equation}
+onde o vetor $\mathbf{t}_n$ representa o envelope temporal contendo energias logarítmicas de $16$ subquadros ($1,25$ ms cada) \cite{Bernd2007} e o vetor $\mathbf{f}_{\LSF,n}$, componentes LSFs que caracterizam o envelope espectral. Como ilustrado na Fig.~\ref{FigSistemaABWE}, tais parâmetros são estimados através de consulta a um conjunto de \textit{codebooks} selecionados de acordo com suas classes fonéticas. Esse processo de classificação reagrupa os vetores de parâmetros $\mathbf{t}_{n}$ e  $\mathbf{f}_{\LSF,n}$ em classes fonéticas, permitindo, dessa forma, uma estimação específica para cada classe.
+
+\subsection{Clusterização e Classificação Fonética}\label{Classe}
+O conjunto de sons componentes dos sinais de fala podem ser agrupados, de acordo com suas similaridades acústicas, em classes fonéticas. Tais classes representam um conjunto de características temporais e espectrais singulares. Essas singularidades são específicas de cada conjunto de sinais e garantem maior discriminação entre as diferentes classes fonéticas. Em \cite{Pulakka2007} e \cite{Jesus2001}, são descritas as propriedades acústicas dos sinais de fala. De acordo com a avaliação do comportamento de cada classe fonética quanto à distribuição de energia no domínio espectral, nota-se que, para o conjunto de classes fricativas, os componentes mais discriminativos encontram-se nas altas bandas de frequência, $S_{\UP}$, i.e., acima de $3400$ Hz e, consequentemente, além da banda de frequência originalmente considerada pela PSTN. Dessa forma, dentre as demais classes fonéticas (veja \cite{Cristofaro}), a discriminação entre fonemas das classes fricativas torna sua percepção mais difícil para os usuários de PSTNs convencionais. Assim, uma atenção especial é dada para tais classes de fonemas, resultando na proposta da Tabela~\ref{TebelaClasses}, a qual será utilizada como referência para o processo de clusterização dos sinais de fala $s_{\NB}(n)$ e $s_{\WB}(n)$.
+
+\begin{table}[htb]
+  \caption{Distribuição de classes fonéticas  para sinais de fala}\label{TebelaClasses}
+  \begin{center}
+% {\tt
+  \begin{tabular}{|c|c|c|c|c|c|}\hline
+  \multicolumn{4}{|c|}{Classes} & \multirow{2}{*}{ex.} & \multirow{2}{*}{Descrição}\\\cline{1-4}
+  2&3&5&9&&\\\hline\hline
+  %&&C1&$/z/$ & Fricativas vozeadas alveolares\\\hline
+  \multirow{8}{*}{A1}&\multirow{4}{*}{B1}&\multirow{3}{*}{C1}&D1&$/z/$ & Fricativas vozeadas alveolares\\\cline{4-6}
+     & & &D2&$/v/$ & Fricativas vozeadas labiodentais\\\cline{4-6}
+     & & &D3&$/j/$ & Fricativas vozeadas palatais\\\cline{3-6}
+     & &C2 &D4&$/V/$ & Demais fonemas vozeados\\\cline{2-6}
+     &\multirow{4}{*}{B2}&\multirow{3}{*}{B3}&D5&$/f/$ & Fricativas não-vozeadas labiodentais\\\cline{4-6}
+     & & &D6&$/s/$ & Fricativas não-vozeadas alveolares\\\cline{4-6}
+     & & &D7&$/x/$ & Fricativas não-vozeadas palatais\\\cline{3-6}
+     & &C4 &D8&$/U/$ & Demais fonemas não-vozeados\\\hline
+  A2 &B3 &C5 &D9&$/Sil/$ & Silêncio\\\hline
+  \end{tabular}
+% }
+  \end{center}
+\end{table}
+A Tabela \ref{TebelaClasses} apresenta quatro diferentes tipos de clusterização denominadas A, B, C e D, contendo duas, três, cinco e nove classes. Após o processo de clusterização e classificação fonética, a seleção de \textit{codebooks} NB e WB torna-se mais discriminativa e, consequentemente, mais apropriada para a etapa de treinamento.
+
+\subsection{Extensão Usando Mapeamento via \textit{Codebooks}}
+\label{ExtensaoMapeamento}
+A Fig.~\ref{TreinamentoCBb} mostra o diagrama de blocos da etapa de treinamento de \textit{codebooks}, em que os filtros LP e HP representam filtros passa-baixas e passa-altas, respectivamente. Nessa etapa, o sinal de banda larga $s_{\WB}(n)$ é filtrado pelos correspondentes filtros, resultando nos sinais de banda estreita $s_{\NB}(n)$ e banda alta $s_{\UP}(n)$. A partir desses sinais, são extraídos parâmetros que representam os espaços de dados $x^{\NB}_{Classe}$ e $y^{\UP}_{Classe}$, de acordo com suas correspondentes classes fonéticas.
+\begin{figure}[h]
+\center
+%\includegraphics[keepaspectratio,width=8cm]{figuras/DiagramaTreinamentoCB.eps}
+%\includegraphics{figuras/Fig_3.eps}
+%\includegraphics[scale=0.95]{figuras/Fig_3.eps}
+\includegraphics[scale=0.9]{figuras/Fig_3.eps}
+\caption{\label{TreinamentoCBb}Etapa do processo de treinamento de \textit{codebooks}.}
+\end{figure}
+
+O processo de treinamento dos melhores \textit{codebooks} para representação dos envelopes do trato vocal inclui o bloco de classificação fonética proposto, visando gerar os diferentes \textit{codebooks} para as classes fonéticas definidas na Tabela~\ref{TebelaClasses}. Em um primeiro momento, esse procedimento é governado por um processo de aprendizagem supervisionada \cite{unno05}, em que a classe fonética seja consultada e os respectivos espaços de dados $x^{\NB}_{Classe}$ e $y^{\UP}_{Classe}$ sejam gerados de acordo com suas classes correspondentes. Após a discriminação em classes, o algoritmo LGB \cite{yoshida94} é utilizado para agrupar os vetores de parâmetros em torno de diferentes centróides e gerar os \textit{codebooks}, $X^{\NB}_{\CB_{Classe}}$ e $Y^{\UP}_{\CB_{Classe}}$, de acordo com as suas correspondentes distâncias euclidianas, $d(S,\hat{S})$. Assim,%,~\ref{DistanciaEuclidiana}.
+\begin{equation}
+d(S,\hat{S}) = \left[\frac{1}{2\pi}\int^{\pi}_{-\pi}\left|S(e^{j\Omega})-\hat{S}(e^{j\Omega})\right|^{2}d\Omega\right]^{1/2}
+\end{equation}
+onde $S(e^{j\Omega})$ caracteriza o espaço de dados das centróides e $\hat{S}(e^{j\Omega})$, o espaço de dados do sinal recebido e analisado. Dessa forma, os \textit{codebooks} gerados possuem maior discriminação entre suas diferentes centróides.%\textit{codewords}.%, representados pelos vetores, $\mathbf{f}_{\LSF,n}$ e $\mathbf{t}_n$, de banda alta e de banda estreita, respectivamente.
+
+O processo de treinamento aqui utilizado considera as técnicas discutidas em \cite{unno05} e \cite{yoshida94}, na qual \textit{codebooks} duais de banda estreita $X^{\NB}_{\CB}$ e de banda alta $Y^{\UP}_{\CB}$ são construídos. A construção desses \textit{codebooks} duais se dá através do mapeamento um-para-um de índices equivalentes a \textit{codewords} de banda alta para \textit{codewords} de banda estreita. Assim, índices de mapeamento das \textit{codewords} de banda alta são usados para o mapeamento de seus correspondentes coeficientes em banda estreita \cite{unno05}. A utilização de índices de banda alta é adotada para evitar confusabilidade e perda de informações de singularidades que resultassem em imprecisão dos envelopes do trato vocal, principalmente nos casos em que os componentes espectrais sejam predominantemente de altas frequências. Entretanto, na etapa de teste indicada na Fig.~\ref{FigSistemaABWE}, durante o processo de estimação de parâmetros, uma imprecisão de singularidades acústicas pode
+ocorrer, por exemplo, devido a eventuais erros na classificação fonética e escolha do \textit{codebook} mais apropriado para um determinado quadro do sinal de fala. Todavia, tal problema é atenuado devido à robustez da estratégia proposta com respeito a erros de classificação fonética, em que, mesmo ocorrendo erros de classificação, as versões estimadas dos parâmetros de banda alta não estariam tão distantes da versão correta, dado o agrupamento de classes similares.
+
+\subsection{Estimação de Parâmetros e Pós-processamento}
+%Para a estimação dos parâmetros do vetor $\tilde{\mathbf{y}}$ que caracteriza o modelo do trato vocal, uma vez determinada a classe, $Classe$, do quadro do segmento de fala NB em análise, as $K$ \textit{codewords} mais similares aos vetores $\mathbf{f}_{\LSF,n}$ e $\mathbf{t}_n$ do \textit{codebook} ${Y}^{\UP}_{{\CB}_{Classe}}$ são selecionadas, i.e. $\mathbf{y}(n | Y^{\UP}_{\CB}) = \{q_1,q_2,...,q_{K}\}$, e os correspondentes vetores $\mathbf{\hat{f}}_{\LSF,n}$ e $\mathbf{\hat{t}}_n$ de banda alta UP são combinados linearmente com um peso $w$ para cada \textit{codeword}. Assim,
+Para a estimação dos parâmetros do vetor $\tilde{\mathbf{y}}$ que caracteriza o modelo do trato vocal, uma vez determinada a classe, $Classe$, do quadro do segmento de fala NB em análise, as $K$ \textit{codewords} mais similares aos vetores $\mathbf{f}_{\LSF,n}$ e $\mathbf{t}_n$ do \textit{codebook} ${Y}^{\UP}_{{\CB}_{Classe}}$ são selecionadas, i.e. $\mathbf{Q}(n | Y^{\UP}_{\CB_{Classe}}) = \{\mathbf{q}_1,\mathbf{q}_2,...,\mathbf{q}_{K}\}$, e os correspondentes vetores $\mathbf{\hat{f}}_{\LSF,n}$ e $\mathbf{\hat{t}}_n$ de banda alta UP são combinados linearmente com um peso $w$ para cada \textit{codeword}. Assim,
+\begin{equation}
+%\hat{y}_{S_{\UP}}^{\UP}(n) = \sum_{m=1}^{K} w_m^{S_{\UP}} \cdot \hat{y}^{\UP}_{cw}(q_{m} | Y^{\UP}_{\CB}) \; \forall \; S_{\UP} \supset [\mathbf{f}_{\LSF}^{\UP}, \mathbf{t}^{\UP}]
+\hat{\mathbf{y}}_{S_{\UP}}(n) = \sum_{m=1}^{K} w_m^{S_{\UP}} \cdot \mathbf{q}_{m}(n | Y^{\UP}_{\CB}) \; \forall \; S_{\UP} \supset [\mathbf{f}_{\LSF}, \mathbf{t}]
+\end{equation}
+%para
+%\begin{equation}
+%S_{up} \supset [\mathbf{f}_{LSF}^{up}, \mathbf{t}^{up}]
+%\end{equation}
+onde $\mathbf{q}_{m}(n | Y^{\UP}_{\CB})$ representa as \textit{codewords} do espaço de dados de banda alta $S_{\UP}$.
+
+A qualidade da estimação dos parâmetros como também a qualidade do sinal de fala reconstruído são aprimoradas através de filtragem de média móvel nos parâmetros estimados $\hat{\mathbf{f}}_{\LSF,n}$ e $\hat{\mathbf{t}}_n$,
+\begin{equation}
+\tilde{\mathbf{y}}(n) = \frac{1}{2} \cdot \left [ \hat{\mathbf{y}}_{S_{\UP}}(n) + \tilde{\mathbf{y}}(n-1) \right ]
+\end{equation}
+onde $\tilde{\mathbf{y}}(n)$ representa o vetor de parâmetros estimados do quadro atual. Esse procedimento proporciona uma transição mais suave entre os parâmetros de cada quadro, atenuando artefatos presentes no processo de estimação variante no tempo \cite{Selvi2011}.
+
+\section{Estágio III - Criação do Sinal de Banda Larga}
+%Neste estágio, como ilustrado no diagrama da Fig.~\ref{FigSistemaABWE}, o sinal de banda alta $\hat{s}_{up}(n)$ dado em (\ref{conv}), resultante da convolução do sinal estimado de excitação $\hat{s}_{up}^{exc}(n)$ com os envelopes temporais e espectrais do trato vocal, $\mathbf{f}_{LSF,n}$ e $\mathbf{t}_n$,
+%\begin{equation}
+%\label{conv}
+%\hat{s}_{up}(n) = \hat{s}_{up}^{exc}(n) * \tilde{\mathbf{y}}(n)
+%\end{equation}
+% é combinado com o sinal de banda estreita $s_{nb}(n)$ e, assim, o sinal estimado de banda larga $\hat{s}_{wb}(n)$ é obtido.
+%\begin{equation}
+%\hat{s}_{wb}(n) =  \hat{s}_{up}(n) \oplus s_{nb}(n)
+%\end{equation}
+%Neste estágio, como ilustrado no diagrama da Fig.~\ref{FigSistemaABWE}, o sinal de banda alta $\hat{s}_{\UP}(n)$ resultante da convolução do sinal estimado de excitação $\hat{s}_{\UP}^{\exci}(n)$ com os envelopes temporais e espectrais do trato vocal, $\mathbf{f}_{\LSF,n}$ e $\mathbf{t}_n$, $\hat{s}_{\UP}(n) = \hat{s}_{\UP}^{\exci}(n) * \tilde{\mathbf{y}}(n)$, é combinado com o sinal de banda estreita $s_{\NB}(n)$ e, assim, o sinal estimado de banda larga $\hat{s}_{\WB}(n)$ é obtido. Então,
+Neste estágio, como ilustrado no diagrama da Fig.~\ref{FigSistemaABWE}, o sinal de banda alta $\hat{s}_{\UP}(n)$, resultante da convolução do sinal estimado de excitação $\hat{s}_{\UP}^{\exci}(n)$ com os envelopes temporais e espectrais do trato vocal $\hat{\mathbf{f}}_{\LSF,n}$ e $\hat{\mathbf{t}}_n$, é combinado com o sinal de banda estreita $s_{\NB}(n)$ e, assim, o sinal estimado de banda larga $\hat{s}_{\WB}(n)$ é obtido. Então,
+\begin{equation}
+\hat{s}_{\WB}(n) =  \hat{s}_{\UP}(n) + s_{\NB}(n) \; \forall \; \hat{s}_{\UP}(n) = \hat{s}_{\UP}^{\exci}(n) * \tilde{\mathbf{y}}(n) \;.
+\end{equation}
+
+\section{Resultados e Análise de Desempenho}
+\label{Resultados}
+Para análise de desempenho, além do sistema NB convencional da PSTN, do sistema de codificação WB e do sistema de ABWE implementado a partir da estratégia proposta neste artigo, é também utilizado, para efeito de comparação, um sistema com base no procedimento de quantização vetorial no qual é realizado um mapeamento de \textit{codebook}, com $1024$ \textit{codewords} para cada quadro de $20$ ms do sinal NB, sem que haja qualquer tipo de classificação fonética do sinal de fala \cite{Can2011}, \cite{Patel2012}.
+
+A Fig.~\ref{FigEspectogramas} mostra os espectrogramas de um sinal WB original enviado pelo terminal \textit{near-end}, de um sinal NB recebido pelo terminal \textit{far-end} sem qualquer tratamento de ABWE e os sinais WB sintetizados através de ABWE sem e com classificação fonética, para este último, considerando nove classes distintas, e \textit{codebooks} contendo $1024$ \textit{codewords}.
+
+A estratégia de ABWE aqui proposta também pode ser avaliada através da análise da densidade espectral de potência dos envelopes do trato vocal dos sinais WB estimados e dos sinais em suas versões originais NB e WB. A Fig.~\ref{FigEnvelope} mostra um exemplo de envelope espectral obtido a partir do sinal WB original, do sinal NB convencional sem o uso de ABWE e dos sinais WB sintetizados através de ABWE sem e com o auxílio de classificação fonética.
+
+\begin{figure}[h]
+\center
+%\includegraphics[keepaspectratio,width=8cm]{figuras/EspectogramasMod.eps}
+%\includegraphics[scale=1]{figuras/Fig_4.eps}
+\includegraphics[scale=0.9]{figuras/Fig_4.eps}
+\caption{Espectrogramas: (a) sinal original WB; (b) sinal recebido NB sem ABWE; (c) sinal WB sintetizado através de ABWE sem classificação fonética; (d) sinal WB sintetizado através de ABWE com classificação fonética.\label{FigEspectogramas}}
+\end{figure}
+
+\begin{figure}[h]
+\center
+%\includegraphics[keepaspectratio,width=8cm]{figuras/Envelope.eps}
+\includegraphics[scale=1]{figuras/Fig_5.eps}
+\caption{Envelopes espectrais dos sinais WB, NB e sinais WB sintetizados através de ABWE sem e com classificação fonética considerando 9 classes.\label{FigEnvelope}}
+\end{figure}
+
+%Alterado em 25/07/2013
+De acordo com as representações dos envelopes estimados (comparados às suas versões originais NB e WB), pode ser constatado que o sinal WB sintetizado através da utilização de classificação fonética com nove classes distintas apresenta uma representação mais fiel à versão WB original.
+
+%Alterado em 24/07/2013
+%De acordo com as representações dos envelopes estimados (comparados às suas versões originais NB e WB), pode ser constatada que o sinal WB sintetizado através da utilização de classificação fonética com nove classes distintas apresenta, em altas frequências, uma representação mais fiel à versão WB original.
+
+%De acordo com as representações dos envelopes estimados (comparados às suas versões originais NB e WB), pode ser constatado um melhor desempenho do sinal WB sintetizado através da utilização de classificação fonética com nove classes distintas. %Essa melhoria é devido a maior fidelidade na representação dos componentes de frequências maiores do que 5000 Hz.
+
+\subsection{Análise Subjetiva do Sinal de Fala}
+Nesta etapa, foram considerados testes de avaliação de acordo com as recomendações dadas em \cite{P.800}. Para tal, foram coletados resultados de testes de 11 ouvintes. Em resumo, é verificada que a estratégia aqui proposta para o algoritmo ABWE é capaz de reduzir a ocorrência de artefatos nos componentes estimados de altas frequências quando comparado com procedimentos convencionais de mapeamento de \textit{codebooks} não-supervisionados. O tratamento específico dos quadros do sinal de fala NB em suas classes fonéticas correspondentes, em especial para as classes fricativas, possibilita um processo de estimação mais fiel aos componentes WB originais. É evidente que, quando comparados os sinais sintetizados com suas versões originais WB, ainda se nota a ausência de maior ``brilho'' no sinal de fala. Entretanto, quando comparado com sua versão convencional NB sem tratamento ABWE, pode ser verificada uma melhoria significativa da qualidade subjetiva do sinal de fala reconstruído.
+%Nessa etapa, onze voluntários foram submetidos à avaliações realizadas de acordo com as estratégias de testes documentadas em~\cite{P.800}. Em resumo, é verificada que a estratégia aqui proposta para o algoritmo ABWE é capaz de reduzir a ocorrência de artefatos nos componentes estimados de altas frequências quando comparado com procedimentos convencionais de mapeamento de \textit{codebooks} não-supervisionados. O tratamento específico dos quadros do sinal de fala NB em suas classes fonéticas correspondentes, em especial para as classes fricativas, possibilita um processo de estimação mais fiel aos componentes WB originais. É evidente que, quando comparados os sinais sintetizados com suas versões originais WB, ainda nota-se a ausência de maior ``brilho'' no sinal de fala; entretanto, quando comparado com sua versão convencional NB sem tratamento ABWE, pode ser verificada uma melhoria significativa da qualidade subjetiva do sinal de fala reconstruído.
+%
+%Para o procedimento de análise subjetiva, onze voluntários foram submetidos à avaliações realizadas de acordo com a estratégia de testes relatadas em~\cite{P.800}. Em resumo, é verificada que a estratégia aqui proposta para o algoritmo ABWE é capaz de reduzir a ocorrência de artefatos nos componentes estimados de altas frequências quando comparado com procedimentos convencionais de mapeamento de \textit{codebooks} não-supervisionados. O tratamento específico dos quadros do sinal de fala NB em suas classes fonéticas correspondentes, em especial para as classes fricativas, possibilita um processo de estimação mais fiel aos componentes WB originais. É evidente que, quando comparados os sinais sintetizados com suas versões originais WB, ainda nota-se a ausência de maior ``brilho'' no sinal de fala; entretanto, quando comparado com sua versão convencional NB sem tratamento ABWE, pode ser verificada uma melhoria significativa da qualidade subjetiva do sinal de fala reconstruído.
+%Subjetivamente, é verificada que a estratégia aqui proposta para o algoritmo ABWE é capaz de reduzir a ocorrência de artefatos nos componentes estimados de altas frequências quando comparado com procedimentos convencionais de mapeamento de \textit{codebooks} não-supervisionados. O tratamento específico dos quadros do sinal de fala NB em suas classes fonéticas correspondentes, em especial para as classes fricativas, possibilita um processo de estimação mais fiel aos componentes WB originais. É evidente que, quando comparados os sinais sintetizados com suas versões originais WB, ainda nota-se a ausência de maior ``brilho'' no sinal de fala; entretanto, quando comparado com sua versão convencional NB sem tratamento ABWE, pode ser verificada uma melhoria significativa da qualidade subjetiva do sinal de fala reconstruído.
+
+\subsection{Análise de Qualidade Usando Medidas Objetivas}
+Para a avaliação da qualidade do sinal de fala WB sintetizado através da estratégia de ABWE utilizada neste trabalho de pesquisa, são adotadas medidas objetivas que simulam a análise perceptual logarítmica do ouvido humano: a medida W-PESQ (\textit{perceptual evaluation of speech quality}) padronizada pela ITU-T \cite{P.862.2}, a razão sinal-ruído segmental calculada no domínio da frequência (FwSegSNR) e a distância espectral logarítmica (LSD) \cite{BookLoizou}.
+%Para a avaliação da qualidade do sinal de fala WB sintetizado através da estratégia de ABWE utilizada neste trabalho de pesquisa, são adotadas medidas objetivas que simulam a análise perceptual logarítmica do ouvido humano: a medida WB-PESQ (\textit{perceptual evaluation of speech quality}) padronizada pela ITU-T \cite{Loizou2008}, a razão sinal-ruído segmental calculada no domínio da frequência (FwSegSNR) e a distância espectral logarítmica (LSD) \cite{BookLoizou} e \cite{Loizou2008}.
+
+A Tabela~\ref{TabelaResultados} apresenta os resultados das medidas objetivas para os diferentes sistemas descritos no início desta seção e a Fig.~\ref{FigVariacaoCodeword} ilustra as curvas de desempenho dos sistemas de ABWE em relação às medidas WB-PESQs considerando diferentes números de classes fonéticas com \textit{codebooks} variando entre $8$ a $2048$ \textit{codewords}.
+
+\begin{table}[htb]
+  \caption{Desempenho dos sistemas de ABWE considerando diferentes medidas de qualidade}\label{TabelaResultados}
+  \begin{center}
+  \begin{tabular}{|c||c|c|c|}\hline
+  Sistemas & LSD (dB) &FwSegSNR (dB) & WB-PESQ\\\hline\hline
+  WB original& $00,00$ & $35,00$ & $4,50$\\\hline
+  NB sem ABWE& $11,82$ & $19,90$ & $1,85$\\\hline
+  ABWE sem classificação& $07,08$ & $19,58$ & $2,52$\\\hline
+  ABWE 2 classes fonéticas& $07,16$ & $19,73$ & $2,53$\\\hline
+  ABWE 3 classes fonéticas& $06,90$ & $21,05$ & $2,64$\\\hline
+  ABWE 5 classes fonéticas& $06,46$ & $23,89$ & $3,24$\\\hline
+  ABWE 9 classes fonéticas& $06,44$ & $23,94$ & $3,49$\\\hline
+  \end{tabular}
+  \end{center}
+\end{table}
+\begin{figure}[hthd]
+\center
+%\includegraphics[keepaspectratio,width=8cm]{figuras/Resultado.eps}
+%\includegraphics[scale=1]{figuras/Fig_6.eps}
+\includegraphics[scale=0.9]{figuras/Fig_6.eps}
+\caption{Curvas de desempenho do algoritmo ABWE utilizando \textit{codebooks} para diferentes números de \textit{codewords}.\label{FigVariacaoCodeword}}
+\end{figure}
+% A Tabela~\ref{TabelaResultados} apresenta os resultados das medidas objetivas para os diferentes sistemas descritos na Seção~\ref{Resultados},
+% \begin{table}[htb]
+%   \caption{Desempenho dos Sistemas de ABWE}\label{TabelaResultados}
+%   \begin{center}
+% % {\tt
+%   \begin{tabular}{|c||c|c|c|}\hline
+%   Sinal & LSD (dB) &FwSegSNR (dB) & WB-PESQ\\\hline\hline
+%   Sistema WB original& $00,00$ & $35,00$ & $4,50$\\\hline
+%   Sistema NB sem ABWE& $11,82$ & $19,90$ & $1,85$\\\hline
+%   ABWE sem classificação& $07,08$ & $19,58$ & $2,52$\\\hline
+%   ABWE 2 classes fonéticas& $07,16$ & $19,73$ & $2,53$\\\hline
+%   ABWE 3 classes fonéticas& $06,90$ & $21,05$ & $2,64$\\\hline
+%   ABWE 5 classes fonéticas& $06,46$ & $23,89$ & $3,24$\\\hline
+%   ABWE 9 classes fonéticas& $06,44$ & $23,94$ & $3,49$\\\hline
+%   \end{tabular}
+% % }
+%   \end{center}
+% \end{table}
+% % \begin{table}[htb]
+% %   \caption{Desempenho dos Sistemas de ABWE}\label{TabelaResultados}
+% %   \begin{center}
+% % % {\tt
+% %   \begin{tabular}{|c||c|c|c|}\hline
+% %   Sinal & LSD (dB) &FwSegSNR (dB) & WB-PESQ(MOS-LQO)\\\hline\hline
+% %   $s_{wb}$ original enviado pelo \textit{near-end} & $00,00$ & $35,00$ & $4,50$\\\hline
+% %   $s_{nb}$ recebido pelo \textit{far-end} sem ABWE  & $11,82$ & $19,90$ & $1,85$\\\hline
+% %   $\hat{s}_{wb}$ ABWE sem classificação fonética & $07,08$ & $19,58$ & $2,52$\\\hline
+% %   $\hat{s}_{wb}$ ABWE com 2 Classes fonéticas& $07,16$ & $19,73$ & $2,53$\\\hline
+% %   $\hat{s}_{wb}$ ABWE com 3 Classes fonéticas& $06,90$ & $21,05$ & $2,64$\\\hline
+% %   $\hat{s}_{wb}$ ABWE com 5 Classes fonéticas& $06,46$ & $23,89$ & $3,24$\\\hline
+% %   $\hat{s}_{wb}$ ABWE com 9 Classes fonéticas& $06,44$ & $23,94$ & $3,49$\\\hline
+% %   \end{tabular}
+% % % }
+% %   \end{center}
+% % \end{table}
+% e a Fig.~\ref{FigVariacaoCodeword} ilustra as curvas de desempenho dos sistemas de ABWE em relação às medidas WB-PESQs considerando diferentes quantidades de classes fonéticas com \textit{codebooks} variando entre $8$ a $2048$ \textit{codewords}.
+% \begin{figure}[hthd]
+% \center
+% \includegraphics[keepaspectratio,width=8cm]{figuras/Resultado.eps}
+% \caption{Curvas de desempenho do algoritmo ABWE utilizando \textit{codebooks} para diferentes quantidades de \textit{codewords}\label{FigVariacaoCodeword}}
+% \end{figure}
+\section{Conclusões e Comentários Finais}\label{Conclusao}
+Neste trabalho de pesquisa, uma nova estratégia para implementação de sistemas de ABWE foi apresentada. Essa estratégia utiliza coeficientes LSF para a representação do envelope espectral do trato vocal e inclui um procedimento de classificação fonética para os sinais NB. A estratégia aqui proposta proporciona sinais sintetizados de WB significativamente melhores do que os sinais NB e aqueles sintetizados a partir de ABWE convencionais. Resultados de avaliações subjetivas e objetivas também ratificam tais afirmações.
+
+\bibliographystyle{IEEEtran}
+\bibliography{sbrt2013_eniosilva}
+
+% Algumas datas importantes:
+% \begin{itemize}
+% \item[-] Submiss\~{a}o de Artigos Completos e Artigos de Inicia\c{c}\~{a}o Cient\'{\i}fica: at\'{e} 30 de abril de 2013;
+% \item[-] Submiss\~{a}o de propostas de Mini-Cursos: at\'{e} 15 de abril de 2013;
+% \item[-] Notifica\c{c}\~{a}o de Aceita\c{c}\~{a}o:  15 de junho de 2013;
+% \item[-] Envio da Vers\~{a}o Final: at\'{e} 10 de julho de 2013.
+% \end{itemize}
+
+\end{document}
